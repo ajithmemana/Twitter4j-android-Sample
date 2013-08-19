@@ -108,11 +108,22 @@ public class TwitterApp extends Activity implements OnClickListener {
 			twitter = new TwitterFactory(conf).getInstance();
 			buttonLogin.setText(R.string.label_disconnect);
 			readStreamButton.setEnabled(true);
+			tweetButton.setEnabled(true);
+			userTagButton.setEnabled(true);
+			hashTagButton.setEnabled(true);
+			filterText.setEnabled(true);
+			
 		} else {
 			// Disable if not logged In
 			buttonLogin.setText(R.string.label_connect);
 			readStreamButton.setEnabled(false);
 			// TODO add more buttons here
+			tweetButton.setEnabled(false);
+			userTagButton.setEnabled(false);
+			hashTagButton.setEnabled(false);
+			filterText.setEnabled(false);
+			
+		
 		}
 	}
 
