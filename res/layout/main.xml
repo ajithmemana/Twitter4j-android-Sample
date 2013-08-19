@@ -1,14 +1,65 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-	android:orientation="vertical" android:layout_width="fill_parent"
-	android:layout_height="fill_parent">
-	<Button android:id="@+id/twitterLogin"
-		android:layout_height="wrap_content" android:layout_width="fill_parent"></Button>
-	<Button android:id="@+id/getTweet" android:text="start streaming"
-	    android:layout_width="fill_parent" android:layout_height="wrap_content" android:enabled="false"></Button>
-	<ScrollView android:id="@+id/scrollView"
-	    android:layout_width="fill_parent" android:layout_height="fill_parent">
-	<TextView android:id="@+id/tweetText"
-	    android:layout_width="fill_parent" android:layout_height="wrap_content"/>
-	</ScrollView>
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
+    <Button
+        android:id="@+id/twitterLogin"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content" >
+    </Button>
+
+    <EditText
+        android:id="@+id/filterText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10" >
+
+        <requestFocus />
+    </EditText>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+        <Button
+        android:id="@+id/readStream"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Read Stream" />
+
+        <Button
+            android:id="@+id/tweetAMessageButton"
+            android:layout_width="60dp"
+            android:layout_height="40dp"
+            android:background="@drawable/twitter_quill"
+            />
+
+        <Button
+            android:id="@+id/filterSelectorhash"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="# Feed" />
+         <Button
+            android:id="@+id/filterSelectoruser"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="/@ Feed" />
+
+    </LinearLayout>
+
+    
+
+    <TextView
+        android:id="@+id/tweetText"
+        android:layout_width="fill_parent"
+        android:text="last Tweet Message here "
+        android:layout_height="wrap_content" />
+
+    <ListView
+        android:id="@+id/streamListView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+    </ListView>
+
 </LinearLayout>

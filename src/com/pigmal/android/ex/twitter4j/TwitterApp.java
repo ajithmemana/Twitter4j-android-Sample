@@ -1,17 +1,15 @@
 package com.pigmal.android.ex.twitter4j;
 
-import twitter4j.DirectMessage;
-import twitter4j.StallWarning;
+import java.util.ArrayList;
+import java.util.List;
+
+import twitter4j.Paging;
+import twitter4j.Query;
+import twitter4j.ResponseList;
 import twitter4j.Status;
-import twitter4j.StatusDeletionNotice;
 import twitter4j.Twitter;
 import twitter4j.TwitterException;
 import twitter4j.TwitterFactory;
-import twitter4j.TwitterStream;
-import twitter4j.TwitterStreamFactory;
-import twitter4j.User;
-import twitter4j.UserList;
-import twitter4j.UserStreamListener;
 import twitter4j.auth.AccessToken;
 import twitter4j.auth.RequestToken;
 import twitter4j.conf.Configuration;
@@ -25,95 +23,115 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.ScrollView;
+import android.widget.EditText;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 public class TwitterApp extends Activity implements OnClickListener {
-	private static final String TAG = "T4JSample";
+	private static final String TAG = "TWITTER4J";
 
 	private Button buttonLogin;
-	private Button getTweetButton;
+	private Button readStreamButton;
 	private TextView tweetText;
-	private ScrollView scrollView;
+	Button tweetButton;
+	Button hashTagButton;
+	Button userTagButton;
 
 	private static Twitter twitter;
 	private static RequestToken requestToken;
 	private static SharedPreferences mSharedPreferences;
-	private static TwitterStream twitterStream;
 	private boolean running = false;
-	
+	ListView streamList;
+	EditText filterText;
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.main);
-		
+
 		mSharedPreferences = getSharedPreferences(Const.PREFERENCE_NAME, MODE_PRIVATE);
-		scrollView = (ScrollView)findViewById(R.id.scrollView);
-		tweetText =(TextView)findViewById(R.id.tweetText);
-		getTweetButton = (Button)findViewById(R.id.getTweet);
-		getTweetButton.setOnClickListener(this);
+		tweetText = (TextView) findViewById(R.id.tweetText);
+		readStreamButton = (Button) findViewById(R.id.readStream);
+		readStreamButton.setOnClickListener(this);
 		buttonLogin = (Button) findViewById(R.id.twitterLogin);
 		buttonLogin.setOnClickListener(this);
-		
+		streamList = (ListView) findViewById(R.id.streamListView);
+		tweetButton = (Button) findViewById(R.id.tweetAMessageButton);
+		tweetButton.setOnClickListener(this);
+		userTagButton = (Button) findViewById(R.id.filterSelectoruser);
+		hashTagButton = (Button) findViewById(R.id.filterSelectorhash);
+		userTagButton.setOnClickListener(this);
+		hashTagButton.setOnClickListener(this);
+		filterText= (EditText) findViewById(R.id.filterText);
+		filterText.setText("twitter");
+
 		/**
 		 * Handle OAuth Callback
 		 */
+
 		Uri uri = getIntent().getData();
 		if (uri != null && uri.toString().startsWith(Const.CALLBACK_URL)) {
 			String verifier = uri.getQueryParameter(Const.IEXTRA_OAUTH_VERIFIER);
-            try { 
-                AccessToken accessToken = twitter.getOAuthAccessToken(requestToken, verifier); 
-                Editor e = mSharedPreferences.edit();
-                e.putString(Const.PREF_KEY_TOKEN, accessToken.getToken()); 
-                e.putString(Const.PREF_KEY_SECRET, accessToken.getTokenSecret()); 
-                e.commit();
-	        } catch (Exception e) { 
-	                Log.e(TAG, e.getMessage()); 
-	                Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show(); 
+			try {
+				// Keep the access tokens
+				AccessToken accessToken = twitter.getOAuthAccessToken(requestToken, verifier);
+				Editor e = mSharedPreferences.edit();
+				e.putString(Const.PREF_KEY_TOKEN, accessToken.getToken());
+				e.putString(Const.PREF_KEY_SECRET, accessToken.getTokenSecret());
+				e.commit();
+			} catch (Exception e) {
+				Log.e(TAG, e.getMessage());
+				Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
 			}
-        }		
+		}
+
 	}
-	
+
 	protected void onResume() {
 		super.onResume();
 
 		if (isConnected()) {
+			// If already connected read the Stored Access token and Access
+			// secret from Pref.
 			String oauthAccessToken = mSharedPreferences.getString(Const.PREF_KEY_TOKEN, "");
 			String oAuthAccessTokenSecret = mSharedPreferences.getString(Const.PREF_KEY_SECRET, "");
 
 			ConfigurationBuilder confbuilder = new ConfigurationBuilder();
-			Configuration conf = confbuilder
-								.setOAuthConsumerKey(Const.CONSUMER_KEY)
-								.setOAuthConsumerSecret(Const.CONSUMER_SECRET)
-								.setOAuthAccessToken(oauthAccessToken)
-								.setOAuthAccessTokenSecret(oAuthAccessTokenSecret)
-								.build();
-			twitterStream = new TwitterStreamFactory(conf).getInstance();
-			
+			Configuration conf = confbuilder.setOAuthConsumerKey(Const.CONSUMER_KEY)
+					.setOAuthConsumerSecret(Const.CONSUMER_SECRET).setOAuthAccessToken(oauthAccessToken)
+					.setOAuthAccessTokenSecret(oAuthAccessTokenSecret).build();
+			// Initialize a new twitter object with the stored consumer keys(x2)
+			// & access keys(x2)
+			twitter = new TwitterFactory(conf).getInstance();
 			buttonLogin.setText(R.string.label_disconnect);
-			getTweetButton.setEnabled(true);
+			readStreamButton.setEnabled(true);
 		} else {
+			// Disable if not logged In
 			buttonLogin.setText(R.string.label_connect);
+			readStreamButton.setEnabled(false);
+			// TODO add more buttons here
 		}
 	}
 
 	/**
 	 * check if the account is authorized
+	 * 
 	 * @return
 	 */
 	private boolean isConnected() {
 		return mSharedPreferences.getString(Const.PREF_KEY_TOKEN, null) != null;
 	}
-
+	// requests a fresh oauth
 	private void askOAuth() {
 		ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
 		configurationBuilder.setOAuthConsumerKey(Const.CONSUMER_KEY);
 		configurationBuilder.setOAuthConsumerSecret(Const.CONSUMER_SECRET);
 		Configuration configuration = configurationBuilder.build();
 		twitter = new TwitterFactory(configuration).getInstance();
-		
+
 		try {
 			requestToken = twitter.getOAuthRequestToken(Const.CALLBACK_URL);
 			Toast.makeText(this, "Please authorize this app!", Toast.LENGTH_LONG).show();
@@ -133,159 +151,80 @@ public class TwitterApp extends Activity implements OnClickListener {
 
 		editor.commit();
 	}
-	
+
 	@Override
 	public void onClick(View v) {
 		switch (v.getId()) {
-		case R.id.twitterLogin:
-			if (isConnected()) {
-				disconnectTwitter();
-				buttonLogin.setText(R.string.label_connect);
-			} else {
-				askOAuth();
-			}
-			break;
-		case R.id.getTweet:
-			if (running) {
-				stopStreamingTimeline();
-				running = false;
-				getTweetButton.setText("start streaming");
-			} else {
-				startStreamingTimeline();
-				running = true;
-				getTweetButton.setText("stop streaming");
-			}
-			break;
+			case R.id.twitterLogin :
+				if (isConnected()) {
+					disconnectTwitter();
+					buttonLogin.setText(R.string.label_connect);
+				} else {
+					askOAuth();
+				}
+				break;
+			case R.id.readStream :
+				readStream(0);
+			case R.id.tweetAMessageButton :
+				tweetAStatus("This is just another test message at " + System.currentTimeMillis());
+				break;
+			case R.id.filterSelectorhash :
+				// Read feed by hash
+				readStream(1);
+				break;
+			case R.id.filterSelectoruser :
+				// Read feed by user
+				readStream(2);
+
+				break;
 		}
 	}
-	
-	private void stopStreamingTimeline() {
-		twitterStream.shutdown();
+
+	public void tweetAStatus(String tweetMessage) {
+		Status tweetedMessage = null;
+		try {
+			tweetedMessage = twitter.updateStatus(tweetMessage);
+		} catch (TwitterException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		if (tweetedMessage != null)
+			tweetText.setText(tweetedMessage.getText());
+		else
+			tweetText.setText("Tweet Not done !");
+
+	}
+	public void readStream(int mode) {
+		Paging paging = new Paging();
+		paging.setPage(1);
+		paging.setCount(18);
+		List<Status> statusList = null;
+		try {
+			switch (mode) {
+				case 0 :
+					statusList = twitter.getHomeTimeline(paging);
+					break;
+				case 1 :
+					statusList = twitter.search(new Query("#" +filterText.getText().toString())).getTweets();
+					break;
+				case 2 :
+					statusList = twitter.getUserTimeline(filterText.getText().toString());
+					break;
+
+				default :
+					break;
+			}
+		} catch (TwitterException e) {
+			e.printStackTrace();
+		}
+		Toast.makeText(getBaseContext(), statusList.size() + " tweets read", 0).show();
+		// Populating list
+		ArrayList<String> tweetMessages = new ArrayList<String>();
+		for (Status status : statusList) {
+			tweetMessages.add(status.getText());
+		}
+		streamList.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, tweetMessages));
+
 	}
 
-	public void startStreamingTimeline() {
-	    UserStreamListener listener = new UserStreamListener() {
-
-			@Override
-			public void onDeletionNotice(StatusDeletionNotice arg0) {
-				System.out.println("deletionnotice");
-			}
-
-			@Override
-			public void onScrubGeo(long arg0, long arg1) {
-				System.out.println("scrubget");
-			}
-
-			@Override
-			public void onStatus(Status status) {
-				final String tweet = "@" + status.getUser().getScreenName() + " : " + status.getText() + "\n"; 
-				System.out.println(tweet);
-				tweetText.post(new Runnable() {
-					@Override
-					public void run() {
-						tweetText.append(tweet);
-						scrollView.fullScroll(View.FOCUS_DOWN);
-					}
-				});
-			}
-
-			@Override
-			public void onTrackLimitationNotice(int arg0) {
-				System.out.println("trackLimitation");
-			}
-
-			@Override
-			public void onException(Exception arg0) {
-				// TODO Auto-generated method stub
-			}
-
-			@Override
-			public void onBlock(User arg0, User arg1) {
-				// TODO Auto-generated method stub
-			}
-
-			@Override
-			public void onDeletionNotice(long arg0, long arg1) {
-				// TODO Auto-generated method stub
-			}
-
-			@Override
-			public void onDirectMessage(DirectMessage arg0) {
-				// TODO Auto-generated method stub				
-			}
-
-			@Override
-			public void onFavorite(User arg0, User arg1, Status arg2) {
-				// TODO Auto-generated method stub
-			}
-
-			@Override
-			public void onFollow(User arg0, User arg1) {
-				// TODO Auto-generated method stub
-			}
-
-			@Override
-			public void onFriendList(long[] arg0) {
-				// TODO Auto-generated method stub
-			}
-
-			@Override
-			public void onUnblock(User arg0, User arg1) {
-				// TODO Auto-generated method stub
-			}
-
-			@Override
-			public void onUnfavorite(User arg0, User arg1, Status arg2) {
-				// TODO Auto-generated method stub
-			}
-
-			@Override
-			public void onUserListCreation(User arg0, UserList arg1) {
-				// TODO Auto-generated method stub
-			}
-
-			@Override
-			public void onUserListDeletion(User arg0, UserList arg1) {
-				// TODO Auto-generated method stub
-			}
-
-			@Override
-			public void onUserListMemberAddition(User arg0, User arg1, UserList arg2) {
-				// TODO Auto-generated method stub
-			}
-
-			@Override
-			public void onUserListMemberDeletion(User arg0, User arg1,  UserList arg2) {
-				// TODO Auto-generated method stub
-			}
-
-			@Override
-			public void onUserListSubscription(User arg0, User arg1, UserList arg2) {
-				// TODO Auto-generated method stub
-			}
-
-			@Override
-			public void onUserListUnsubscription(User arg0, User arg1, UserList arg2) {
-				// TODO Auto-generated method stub
-			}
-
-			@Override
-			public void onUserListUpdate(User arg0, UserList arg1) {
-				// TODO Auto-generated method stub
-			}
-
-			@Override
-			public void onUserProfileUpdate(User arg0) {
-				// TODO Auto-generated method stub
-			}
-
-			@Override
-			public void onStallWarning(StallWarning arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-	    };
-        twitterStream.addListener(listener);
-        twitterStream.user();
-	}
 }
