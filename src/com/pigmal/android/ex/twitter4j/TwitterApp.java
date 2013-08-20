@@ -20,6 +20,8 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.Html;
+import android.text.method.LinkMovementMethod;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -65,7 +67,7 @@ public class TwitterApp extends Activity implements OnClickListener {
 		hashTagButton = (Button) findViewById(R.id.filterSelectorhash);
 		userTagButton.setOnClickListener(this);
 		hashTagButton.setOnClickListener(this);
-		filterText= (EditText) findViewById(R.id.filterText);
+		filterText = (EditText) findViewById(R.id.filterText);
 		filterText.setText("twitter");
 
 		/**
@@ -74,9 +76,10 @@ public class TwitterApp extends Activity implements OnClickListener {
 
 		Uri uri = getIntent().getData();
 		if (uri != null && uri.toString().startsWith(Const.CALLBACK_URL)) {
+			Toast.makeText(getBaseContext(), "Logged In " + uri.toString(), 1).show();
 			String verifier = uri.getQueryParameter(Const.IEXTRA_OAUTH_VERIFIER);
 			try {
-				// Keep the access tokens
+				// retrieve access token using verifier & Keep the access tokens
 				AccessToken accessToken = twitter.getOAuthAccessToken(requestToken, verifier);
 				Editor e = mSharedPreferences.edit();
 				e.putString(Const.PREF_KEY_TOKEN, accessToken.getToken());
@@ -112,7 +115,7 @@ public class TwitterApp extends Activity implements OnClickListener {
 			userTagButton.setEnabled(true);
 			hashTagButton.setEnabled(true);
 			filterText.setEnabled(true);
-			
+
 		} else {
 			// Disable if not logged In
 			buttonLogin.setText(R.string.label_connect);
@@ -122,8 +125,7 @@ public class TwitterApp extends Activity implements OnClickListener {
 			userTagButton.setEnabled(false);
 			hashTagButton.setEnabled(false);
 			filterText.setEnabled(false);
-			
-		
+
 		}
 	}
 
@@ -145,7 +147,8 @@ public class TwitterApp extends Activity implements OnClickListener {
 
 		try {
 			requestToken = twitter.getOAuthRequestToken(Const.CALLBACK_URL);
-			Toast.makeText(this, "Please authorize this app!", Toast.LENGTH_LONG).show();
+			// Toast.makeText(this, "Please authorize this app!",
+			// Toast.LENGTH_LONG).show();
 			this.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(requestToken.getAuthenticationURL())));
 		} catch (TwitterException e) {
 			e.printStackTrace();
@@ -199,9 +202,10 @@ public class TwitterApp extends Activity implements OnClickListener {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		if (tweetedMessage != null)
+		if (tweetedMessage != null) {
 			tweetText.setText(tweetedMessage.getText());
-		else
+			
+		} else
 			tweetText.setText("Tweet Not done !");
 
 	}
@@ -216,7 +220,7 @@ public class TwitterApp extends Activity implements OnClickListener {
 					statusList = twitter.getHomeTimeline(paging);
 					break;
 				case 1 :
-					statusList = twitter.search(new Query("#" +filterText.getText().toString())).getTweets();
+					statusList = twitter.search(new Query("#" + filterText.getText().toString())).getTweets();
 					break;
 				case 2 :
 					statusList = twitter.getUserTimeline(filterText.getText().toString());
