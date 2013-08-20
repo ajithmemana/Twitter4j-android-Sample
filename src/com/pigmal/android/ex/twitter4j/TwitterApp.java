@@ -238,6 +238,7 @@ LayoutInflater layoutInflater;
 		} catch (TwitterException e) {
 			e.printStackTrace();
 		}
+		if(statusList!= null)
 		Toast.makeText(getBaseContext(), statusList.size() + " tweets read", 0).show();
 		// Populating list
 		
