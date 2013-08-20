@@ -23,6 +23,7 @@ import android.os.Bundle;
 import android.text.Html;
 import android.text.method.LinkMovementMethod;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.ArrayAdapter;
@@ -48,7 +49,7 @@ public class TwitterApp extends Activity implements OnClickListener {
 	private boolean running = false;
 	ListView streamList;
 	EditText filterText;
-
+LayoutInflater layoutInflater;
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -69,7 +70,8 @@ public class TwitterApp extends Activity implements OnClickListener {
 		hashTagButton.setOnClickListener(this);
 		filterText = (EditText) findViewById(R.id.filterText);
 		filterText.setText("twitter");
-
+		filterText.clearFocus();
+		layoutInflater = getLayoutInflater();
 		/**
 		 * Handle OAuth Callback
 		 */
@@ -115,6 +117,8 @@ public class TwitterApp extends Activity implements OnClickListener {
 			userTagButton.setEnabled(true);
 			hashTagButton.setEnabled(true);
 			filterText.setEnabled(true);
+			filterText.clearFocus();
+
 
 		} else {
 			// Disable if not logged In
@@ -125,6 +129,8 @@ public class TwitterApp extends Activity implements OnClickListener {
 			userTagButton.setEnabled(false);
 			hashTagButton.setEnabled(false);
 			filterText.setEnabled(false);
+			filterText.clearFocus();
+
 
 		}
 	}
@@ -234,11 +240,8 @@ public class TwitterApp extends Activity implements OnClickListener {
 		}
 		Toast.makeText(getBaseContext(), statusList.size() + " tweets read", 0).show();
 		// Populating list
-		ArrayList<String> tweetMessages = new ArrayList<String>();
-		for (Status status : statusList) {
-			tweetMessages.add(status.getText());
-		}
-		streamList.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, tweetMessages));
+		
+		streamList.setAdapter(new tweetsAdapter(this,0, layoutInflater, statusList));
 
 	}
 
