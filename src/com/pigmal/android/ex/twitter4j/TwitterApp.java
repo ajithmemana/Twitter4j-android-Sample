@@ -69,7 +69,7 @@ LayoutInflater layoutInflater;
 		userTagButton.setOnClickListener(this);
 		hashTagButton.setOnClickListener(this);
 		filterText = (EditText) findViewById(R.id.filterText);
-		filterText.setText("twitter");
+		filterText.setText("facebook");
 		filterText.clearFocus();
 		layoutInflater = getLayoutInflater();
 		/**
